@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "files": ["src/renderer/main.ts"]
+}

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Launches LLMs from this checkout. Rebuild with `npm run build` after changing the code.
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+unset ELECTRON_RUN_AS_NODE
+exec "$ROOT/node_modules/electron/dist/electron" "$ROOT" --ozone-platform-hint=auto "$@"

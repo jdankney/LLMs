@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' file:; style-src 'self' file: 'unsafe-inline'; img-src 'self' file: data:"
+    />
+    <title>LLMs</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="bar" id="bar">
+      <div class="brand drag">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="3" y="5" width="20" height="15" rx="5" class="logo-back" />
+          <rect x="9" y="11" width="20" height="15" rx="5" class="logo-front" />
+          <circle cx="15" cy="18.5" r="1.6" class="logo-dot" />
+          <circle cx="19" cy="18.5" r="1.6" class="logo-dot" />
+          <circle cx="23" cy="18.5" r="1.6" class="logo-dot" />
+        </svg>
+        <span class="wordmark">LLMs</span>
+      </div>
+
+      <div class="drag spacer"></div>
+
+      <nav class="track" id="track" aria-label="Providers">
+        <div class="indicator" id="indicator"></div>
+      </nav>
+
+      <button class="icon-btn add-btn" id="add-btn" title="Add a tab (Ctrl+T)">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+
+      <div class="drag spacer"></div>
+
+      <div class="actions">
+        <span class="toast" id="toast" role="status"></span>
+        <button class="icon-btn" id="home" title="Back to start page (Alt+Home)">
+          <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5" /><path d="M5 9.5V20h14V9.5" /></svg>
+        </button>
+        <button class="icon-btn" id="reload" title="Reload (Ctrl+R)">
+          <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7" /><path d="M20 4v7h-7" /></svg>
+        </button>
+        <button class="icon-btn" id="settings-btn" title="Settings (Ctrl+,)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" /></svg>
+        </button>
+        <div class="win-controls" id="win-controls">
+          <span class="divider"></span>
+          <button class="win-btn" data-win="minimize" title="Minimize">
+            <svg viewBox="0 0 24 24"><path d="M6 12h12" /></svg>
+          </button>
+          <button class="win-btn" data-win="maximize" title="Maximize">
+            <svg viewBox="0 0 24 24" id="max-icon"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+          </button>
+          <button class="win-btn close" data-win="close" title="Close">
+            <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="overlay" id="overlay" hidden>
+      <div class="backdrop" id="backdrop"></div>
+      <aside class="panel" role="dialog" aria-label="Settings">
+        <div class="panel-head">
+          <h2>Settings</h2>
+          <button class="icon-btn" id="close-settings" title="Close (Esc)">
+            <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" /></svg>
+          </button>
+        </div>
+
+        <div class="panel-body">
+          <section>
+            <h3>Providers</h3>
+            <p class="hint">Drag to reorder. Ctrl+1–9 jumps to the first nine.</p>
+            <ul class="provider-list" id="provider-list"></ul>
+          </section>
+
+          <section>
+            <h3>Background tabs</h3>
+            <p class="hint">Tabs load when you first click them, then stay loaded this long after you leave them. Logins are kept either way.</p>
+            <div class="segmented" id="keepalive"></div>
+          </section>
+
+          <section>
+            <h3>Window</h3>
+            <label class="row">
+              <span>
+                <span class="row-title">Use KDE title bar</span>
+                <span class="hint">Native frame instead of the built-in controls.</span>
+              </span>
+              <input type="checkbox" class="switch" id="native-frame" />
+            </label>
+            <button class="text-btn" id="relaunch" hidden>Restart to apply</button>
+          </section>
+
+          <section>
+            <h3>Shortcuts</h3>
+            <dl class="shortcuts">
+              <dt>Ctrl+1 … 9</dt><dd>Jump to provider</dd>
+              <dt>Ctrl+Tab</dt><dd>Next provider (Shift: previous)</dd>
+              <dt>Ctrl+R</dt><dd>Reload (Shift: ignore cache)</dd>
+              <dt>Ctrl + / − / 0</dt><dd>Zoom this provider</dd>
+              <dt>Alt+← / →</dt><dd>Back / forward</dd>
+              <dt>Alt+Home</dt><dd>Back to start page</dd>
+              <dt>Ctrl+T</dt><dd>Add a tab (+)</dd>
+              <dt>Ctrl+,</dt><dd>Settings</dd>
+              <dt>F11</dt><dd>Fullscreen</dd>
+              <dt>Right-click a tab</dt><dd>Reload, unload, log out…</dd>
+            </dl>
+          </section>
+        </div>
+      </aside>
+    </div>
+
+    <div class="overlay" id="add-overlay" hidden>
+      <div class="backdrop" data-close="add-overlay"></div>
+      <form class="modal" id="add-form" role="dialog" aria-label="Add a tab" autocomplete="off">
+        <div class="panel-head">
+          <h2>Add a tab</h2>
+          <button type="button" class="icon-btn" data-close="add-overlay" title="Close (Esc)">
+            <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" /></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="segmented" id="add-kind">
+            <button type="button" class="on" data-kind="account">Another account</button>
+            <button type="button" data-kind="site">Custom site</button>
+          </div>
+
+          <label class="field" id="field-base">
+            <span>Provider</span>
+            <select id="add-base"></select>
+          </label>
+          <label class="field" id="field-url" hidden>
+            <span>Address</span>
+            <input id="add-url" type="text" placeholder="e.g. poe.com" spellcheck="false" />
+          </label>
+          <label class="field">
+            <span>Name</span>
+            <input id="add-name" type="text" maxlength="40" placeholder="Optional" />
+          </label>
+
+          <p class="hint" id="add-hint"></p>
+          <div class="modal-actions">
+            <button type="button" class="text-btn" data-close="add-overlay">Cancel</button>
+            <button type="submit" class="primary">Add tab</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script defer src="main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "llms",
+  "productName": "LLMs",
+  "version": "0.1.0",
+  "description": "LLMs (Lots of Login Models): one window, every free chatbot you're logged into.",
+  "main": "dist/main/index.js",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && cp src/renderer/index.html src/renderer/styles.css dist/renderer/",
+    "start": "npm run build && ./scripts/llms",
+    "dev": "npm run build && ./scripts/llms --enable-logging"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "electron": "^44.5.1",
+    "typescript": "^5.9.3"
+  },
+  "desktopName": "llms.desktop"
+}
