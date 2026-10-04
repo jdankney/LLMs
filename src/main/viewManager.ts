@@ -7,6 +7,8 @@ import { getProviderSession } from './sessions';
 import { getSettings, updateSettings } from './settings';
 
 export const TOPBAR_HEIGHT = 46;
+const MAX_PANES = 4;
+const PANE_GAP = 4;
 const SWEEP_INTERVAL_MS = 30_000;
 
 interface Tab {
@@ -20,7 +22,10 @@ export class ViewManager {
   readonly window: BaseWindow;
   readonly topbar: WebContentsView;
   private tabs = new Map<string, Tab>();
+  /** The focused provider. In split view it is one of `group`. */
   private active: string | null = null;
+  /** Providers shown side by side; empty when split view is off. */
+  private group: string[] = [];
   private overlayOpen = false;
   private htmlFullscreen = false;
   private sweepTimer: NodeJS.Timeout;
@@ -62,6 +67,7 @@ export class ViewManager {
     this.window.on('unmaximize', () => this.pushState());
     this.window.on('close', () => this.saveBounds());
 
+    this.group = [...s.split];
     this.sweepTimer = setInterval(() => this.sweep(), SWEEP_INTERVAL_MS);
     this.window.on('closed', () => clearInterval(this.sweepTimer));
 
@@ -89,10 +95,12 @@ export class ViewManager {
           icon: iconFor(p),
           removable: isExtra(p.id),
           enabled: !s.disabled.includes(p.id),
+          inSplit: this.group.includes(p.id),
           status: this.tabs.get(p.id)?.status ?? 'unloaded',
         };
       }),
       active: this.active,
+      split: this.group.length > 1,
       settings: s,
       maximized: this.window.isMaximized(),
     };
@@ -108,35 +116,100 @@ export class ViewManager {
 
   // ---------- tabs ----------
 
-  /** Show a provider, loading it on first use. */
+  /** Focus a provider, loading it on first use. In split view it takes over the focused pane. */
   activate(id: string): void {
     const provider = findProvider(id);
     if (!provider || getSettings().disabled.includes(id)) return;
 
-    if (this.active && this.active !== id) {
-      const prev = this.tabs.get(this.active);
-      if (prev) {
-        prev.view.setVisible(false);
-        prev.hiddenAt = Date.now();
-      }
+    if (this.group.length > 1 && !this.group.includes(id)) {
+      const slot = this.group.indexOf(this.active ?? '');
+      this.group[slot >= 0 ? slot : this.group.length - 1] = id;
+      this.saveGroup();
     }
-
-    let tab = this.tabs.get(id);
-    if (!tab) tab = this.createTab(provider);
-    tab.hiddenAt = undefined;
-    tab.view.setVisible(true);
     this.active = id;
     updateSettings({ lastActive: id });
+    this.refresh();
+  }
+
+  /** Make the view tree match state: create and show the visible panes, hide everything else. */
+  private refresh(): void {
+    const visible = this.visibleIds();
+    for (const id of visible) {
+      let tab = this.tabs.get(id);
+      if (!tab) tab = this.createTab(findProvider(id)!);
+      tab.hiddenAt = undefined;
+      tab.view.setVisible(true);
+    }
+    for (const [id, tab] of this.tabs) {
+      if (visible.includes(id)) continue;
+      tab.view.setVisible(false);
+      tab.hiddenAt ??= Date.now();
+    }
     this.layout();
-    if (!this.overlayOpen) tab.view.webContents.focus();
+    if (!this.overlayOpen && this.active) this.tabs.get(this.active)?.view.webContents.focus();
     this.pushState();
   }
 
+  /** Visible providers in top bar order. */
+  private visibleIds(): string[] {
+    if (this.group.length > 1) return getSettings().order.filter((id) => this.group.includes(id));
+    return this.active ? [this.active] : [];
+  }
+
+  private saveGroup(): void {
+    updateSettings({ split: this.group.length > 1 ? [...this.group] : [] });
+  }
+
+  /** Split view on/off. Turning it on pairs the focused provider with the next one in the bar. */
+  toggleSplit(): void {
+    if (this.group.length > 1) {
+      this.group = [];
+    } else {
+      const list = this.enabledProviders();
+      const i = list.findIndex((p) => p.id === this.active);
+      if (list.length < 2 || i < 0) return this.toast({ text: 'Open a provider first, and enable at least two', kind: 'error' });
+      this.group = [list[i].id, list[(i + 1) % list.length].id];
+    }
+    this.saveGroup();
+    this.refresh();
+  }
+
+  /** Add a provider to the panes, or take it out again (Shift+click on a tab). */
+  toggleInGroup(id: string): void {
+    if (!findProvider(id) || getSettings().disabled.includes(id)) return;
+    if (this.group.length < 2) {
+      if (!this.active || this.active === id) return this.activate(id);
+      this.group = [this.active, id];
+    } else if (this.group.includes(id)) {
+      this.removeFromGroup(id);
+      return;
+    } else if (this.group.length >= MAX_PANES) {
+      return this.toast({ text: `Split view holds up to ${MAX_PANES} panes`, kind: 'error' });
+    } else {
+      this.group.push(id);
+    }
+    this.active = id;
+    updateSettings({ lastActive: id });
+    this.saveGroup();
+    this.refresh();
+  }
+
+  /** Drop a pane. Down to one pane, split view ends and that provider stays. */
+  private removeFromGroup(id: string): void {
+    if (!this.group.includes(id)) return;
+    this.group = this.group.filter((g) => g !== id);
+    if (this.active === id) this.active = this.group[0] ?? null;
+    if (this.group.length < 2) this.group = [];
+    this.saveGroup();
+    this.refresh();
+  }
+
   cycle(step: number): void {
-    const list = this.enabledProviders();
+    // In split view Ctrl+Tab moves focus between the panes instead of swapping them out.
+    const list = this.group.length > 1 ? this.visibleIds() : this.enabledProviders().map((p) => p.id);
     if (!list.length) return;
-    const i = list.findIndex((p) => p.id === this.active);
-    this.activate(list[(i + step + list.length) % list.length].id);
+    const i = list.indexOf(this.active ?? '');
+    this.activate(list[(i + step + list.length) % list.length]);
   }
 
   activateIndex(index: number): void {
@@ -184,6 +257,16 @@ export class ViewManager {
     if (provider.custom && !provider.base && !provider.icon) {
       wc.once('page-favicon-updated', (_e, favicons) => void this.saveFavicon(provider.id, favicons));
     }
+    // Clicking into a pane focuses it, so reload, zoom and shortcuts follow the pane you're using.
+    // Real mouse-downs only: a pane gaining focus by itself (e.g. when it first appears) shouldn't count.
+    wc.on('before-mouse-event', (_e, mouse) => {
+      if (mouse.type !== 'mouseDown') return;
+      if (this.group.length > 1 && this.active !== provider.id && this.group.includes(provider.id)) {
+        this.active = provider.id;
+        updateSettings({ lastActive: provider.id });
+        this.pushState();
+      }
+    });
     wc.on('enter-html-full-screen', () => this.setHtmlFullscreen(true));
     wc.on('leave-html-full-screen', () => this.setHtmlFullscreen(false));
 
@@ -203,6 +286,7 @@ export class ViewManager {
     this.tabs.delete(id);
     this.window.contentView.removeChildView(tab.view);
     tab.view.webContents.close();
+    if (this.group.includes(id)) return this.removeFromGroup(id);
     if (this.active === id) this.active = null;
     this.pushState();
   }
@@ -388,7 +472,11 @@ export class ViewManager {
   /** Called after settings change: unload tabs that were disabled, fix the active tab. */
   applySettings(prev: Settings): void {
     const s = getSettings();
-    for (const id of s.disabled) if (this.tabs.has(id)) this.unload(id);
+    for (const id of s.disabled) {
+      if (this.tabs.has(id)) this.unload(id);
+      else this.removeFromGroup(id);
+    }
+    if (this.group.length > 1) this.refresh(); // order may have changed
     if (!this.active || s.disabled.includes(this.active)) {
       const first = this.enabledProviders()[0];
       if (first) this.activate(first.id);
@@ -427,13 +515,36 @@ export class ViewManager {
     const { width, height } = this.window.getContentBounds();
     const top = this.htmlFullscreen ? 0 : TOPBAR_HEIGHT;
     this.topbar.setBounds({ x: 0, y: 0, width, height: this.overlayOpen ? height : TOPBAR_HEIGHT });
-    for (const [id, tab] of this.tabs) {
-      if (id === this.active) tab.view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) });
-    }
+
+    // A page in HTML fullscreen (video, etc.) takes the whole window, even in split view.
+    const ids = this.htmlFullscreen && this.active ? [this.active] : this.visibleIds();
+    const rects = paneRects(ids.length, { x: 0, y: top, width, height: Math.max(0, height - top) });
+    ids.forEach((id, i) => this.tabs.get(id)?.view.setBounds(rects[i]));
   }
 
   private saveBounds(): void {
     const maximized = this.window.isMaximized();
     updateSettings(maximized ? { maximized } : { maximized, bounds: this.window.getNormalBounds() });
   }
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** One pane fills the area, two or three sit in columns, four make a 2x2 grid. */
+function paneRects(count: number, area: Rect): Rect[] {
+  const cols = count === 4 ? 2 : Math.max(count, 1);
+  const rows = count === 4 ? 2 : 1;
+  const cellW = (area.width - PANE_GAP * (cols - 1)) / cols;
+  const cellH = (area.height - PANE_GAP * (rows - 1)) / rows;
+  return Array.from({ length: count }, (_, i) => ({
+    x: Math.round(area.x + (i % cols) * (cellW + PANE_GAP)),
+    y: Math.round(area.y + Math.floor(i / cols) * (cellH + PANE_GAP)),
+    width: Math.round(cellW),
+    height: Math.round(cellH),
+  }));
 }

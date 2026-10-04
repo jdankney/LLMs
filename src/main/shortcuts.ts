@@ -46,6 +46,10 @@ function handle(m: ViewManager, input: Input): boolean {
     m.zoom('reset');
     return true;
   }
+  if (ctrl && !alt && !shift && key === '\\') {
+    m.toggleSplit();
+    return true;
+  }
   if (ctrl && !shift && key.toLowerCase() === 't') {
     m.topbar.webContents.send('open-add');
     return true;

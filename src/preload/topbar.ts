@@ -9,6 +9,8 @@ const api = {
   onOpenAdd: (cb: () => void) => ipcRenderer.on('open-add', () => cb()),
   onOpenSettings: (cb: () => void) => ipcRenderer.on('open-settings', () => cb()),
   activate: (id: string) => ipcRenderer.send('activate', id),
+  toggleSplit: () => ipcRenderer.send('toggle-split'),
+  toggleInSplit: (id: string) => ipcRenderer.send('toggle-in-split', id),
   reload: () => ipcRenderer.send('reload'),
   goHome: () => ipcRenderer.send('go-home'),
   setOverlay: (open: boolean) => ipcRenderer.send('set-overlay', open),

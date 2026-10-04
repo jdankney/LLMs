@@ -49,6 +49,8 @@ if (!app.requestSingleInstanceLock()) {
 function registerIpc(): void {
   ipcMain.handle('get-state', () => manager?.getState());
   ipcMain.on('activate', (_e, id: string) => manager?.activate(id));
+  ipcMain.on('toggle-split', () => manager?.toggleSplit());
+  ipcMain.on('toggle-in-split', (_e, id: string) => manager?.toggleInGroup(id));
   ipcMain.on('reload', () => manager?.reload());
   ipcMain.on('go-home', () => manager?.goHome());
   ipcMain.on('set-overlay', (_e, open: boolean) => manager?.setOverlay(open));

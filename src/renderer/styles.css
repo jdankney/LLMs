@@ -687,3 +687,23 @@ h3 {
 [hidden] {
   display: none !important;
 }
+
+/* ---------- split view ---------- */
+
+.icon-btn.on {
+  color: var(--text);
+  background: var(--pill-active);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* Panes other than the focused one get a ring in their brand color. */
+.pill.grouped:not(.active) {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--glow, var(--accent)) 65%, transparent);
+}
+.pill.grouped .name {
+  max-width: 0;
+}
+.pill.grouped.active .name {
+  max-width: 120px;
+}

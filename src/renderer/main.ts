@@ -61,7 +61,7 @@ function renderPills(s: AppState): void {
       el.className = 'pill';
       el.dataset.id = p.id;
       el.innerHTML = `<span class="icon"></span><span class="status"></span><span class="name"></span>`;
-      el.addEventListener('click', () => api.activate(p.id));
+      el.addEventListener('click', (e) => (e.shiftKey ? api.toggleInSplit(p.id) : api.activate(p.id)));
       el.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         api.tabMenu(p.id);
@@ -70,8 +70,8 @@ function renderPills(s: AppState): void {
     existing.delete(p.id);
     setIcon(el.querySelector('.icon')!, p);
     el.querySelector('.name')!.textContent = p.name;
-    el.title = i < 9 ? `${p.name}  (Ctrl+${i + 1})` : p.name;
-    el.className = `pill ${p.status}` + (p.id === s.active ? ' active' : '');
+    el.title = (i < 9 ? `${p.name}  (Ctrl+${i + 1})` : p.name) + (p.inSplit ? '\nShift+click to remove from split' : '\nShift+click to show alongside');
+    el.className = `pill ${p.status}` + (p.id === s.active ? ' active' : '') + (p.inSplit ? ' grouped' : '');
     el.style.setProperty('--glow', p.color);
     track.appendChild(el); // re-appending keeps DOM order in sync with settings order
   });
@@ -119,6 +119,7 @@ track.addEventListener(
 );
 
 $('reload').addEventListener('click', () => api.reload());
+$('split-btn').addEventListener('click', () => api.toggleSplit());
 $('home').addEventListener('click', () => api.goHome());
 document.querySelectorAll<HTMLButtonElement>('[data-win]').forEach((b) =>
   b.addEventListener('click', () => api.windowAction(b.dataset.win as 'minimize' | 'maximize' | 'close')),
@@ -127,6 +128,7 @@ document.querySelectorAll<HTMLButtonElement>('[data-win]').forEach((b) =>
 document.querySelectorAll('.drag').forEach((el) => el.addEventListener('dblclick', () => api.windowAction('maximize')));
 
 function renderWindowControls(s: AppState): void {
+  $('split-btn').classList.toggle('on', s.split);
   $('win-controls').hidden = initialFrame === true;
   $('max-icon').innerHTML = s.maximized
     ? '<rect x="8" y="5" width="11" height="11" rx="2"/><path d="M5 9v8a2 2 0 0 0 2 2h8"/>'

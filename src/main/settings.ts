@@ -10,6 +10,7 @@ const defaults = (): Settings => ({
   order: allProviders().map((p) => p.id),
   disabled: [],
   custom: [],
+  split: [],
   zoom: {},
   lastActive: null,
   keepAliveMinutes: 30,
@@ -35,6 +36,8 @@ export function loadSettings(): Settings {
   current.order = current.order.filter((id) => known.has(id));
   for (const p of all) if (!current.order.includes(p.id)) current.order.push(p.id);
   current.disabled = current.disabled.filter((id) => known.has(id));
+  current.split = current.split.filter((id) => known.has(id) && !current.disabled.includes(id));
+  if (current.split.length < 2) current.split = [];
   return current;
 }
 

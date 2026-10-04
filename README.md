@@ -24,6 +24,8 @@ After changing code: `npm run build`, then relaunch.
 
 The **+** button adds a second account of any provider (separate cookies) or any website of your own; both can be removed again in Settings or from the tab's right-click menu.
 
+**Split view** shows 2–4 providers side by side (two or three in columns, four in a 2×2 grid, in tab bar order). Turn it on with the split button or Ctrl+\, then Shift+click tabs to add or remove panes. Click into a pane to focus it; reload, zoom and shortcuts act on the focused pane, and a plain click on another tab swaps it into the focused slot. The layout is remembered across restarts.
+
 Logins and settings live in `~/.config/LLMs/`. Gemini and AI Studio share one Google login.
 
 ## Shortcuts
@@ -31,7 +33,9 @@ Logins and settings live in `~/.config/LLMs/`. Gemini and AI Studio share one Go
 | Keys | Action |
 |---|---|
 | Ctrl+1…9 | Jump to provider |
-| Ctrl+Tab / Ctrl+Shift+Tab | Next / previous provider |
+| Ctrl+Tab / Ctrl+Shift+Tab | Next / previous provider (or pane, in split view) |
+| Ctrl+\ | Split view on / off |
+| Shift+click a tab | Add / remove it as a pane (up to 4) |
 | Ctrl+R / Ctrl+Shift+R | Reload / hard reload |
 | Ctrl + / − / 0 | Zoom (remembered per provider) |
 | Alt+← / → | Back / forward |
