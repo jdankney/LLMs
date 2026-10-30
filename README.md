@@ -84,4 +84,4 @@ responsible for complying with each provider's terms of service.
 
 ## License
 
-[MIT](LICENSE) © 2026 j4mes
+[MIT](LICENSE) © 2026 James Ankney
