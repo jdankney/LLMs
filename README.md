@@ -81,3 +81,7 @@ system browser; login popups stay in the provider's cookie jar.
 LLMs is an unofficial wrapper around third-party websites. It is not affiliated with or
 endorsed by any provider. All trademarks belong to their respective owners, and you are
 responsible for complying with each provider's terms of service.
+
+## License
+
+[MIT](LICENSE) © 2026 j4mes

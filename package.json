@@ -5,6 +5,7 @@
   "description": "LLMs (Lots of Login Models): one window, every free chatbot you're logged into.",
   "main": "dist/main/index.js",
   "private": true,
+  "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
   },
