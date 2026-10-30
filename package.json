@@ -5,6 +5,9 @@
   "description": "LLMs (Lots of Login Models): one window, every free chatbot you're logged into.",
   "main": "dist/main/index.js",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json && cp src/renderer/index.html src/renderer/styles.css dist/renderer/",
     "start": "npm run build && ./scripts/llms",

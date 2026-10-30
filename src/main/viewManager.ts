@@ -198,7 +198,10 @@ export class ViewManager {
   private removeFromGroup(id: string): void {
     if (!this.group.includes(id)) return;
     this.group = this.group.filter((g) => g !== id);
-    if (this.active === id) this.active = this.group[0] ?? null;
+    if (this.active === id) {
+      this.active = this.group[0] ?? null;
+      if (this.active) updateSettings({ lastActive: this.active });
+    }
     if (this.group.length < 2) this.group = [];
     this.saveGroup();
     this.refresh();
@@ -254,7 +257,7 @@ export class ViewManager {
       const zoom = getSettings().zoom[provider.id];
       if (zoom) wc.setZoomFactor(zoom);
     });
-    if (provider.custom && !provider.base && !provider.icon) {
+    if (provider.custom && !iconFor(provider)) {
       wc.once('page-favicon-updated', (_e, favicons) => void this.saveFavicon(provider.id, favicons));
     }
     // Clicking into a pane focuses it, so reload, zoom and shortcuts follow the pane you're using.
@@ -287,8 +290,16 @@ export class ViewManager {
     this.window.contentView.removeChildView(tab.view);
     tab.view.webContents.close();
     if (this.group.includes(id)) return this.removeFromGroup(id);
-    if (this.active === id) this.active = null;
-    this.pushState();
+
+    // Don't leave the window blank if the active tab was the one unloaded.
+    if (this.active === id) {
+      const next = this.enabledProviders().find((p) => p.id !== id);
+      this.active = next?.id ?? null;
+      if (this.active) updateSettings({ lastActive: this.active });
+      this.refresh();
+    } else {
+      this.pushState();
+    }
   }
 
   reload(id = this.active, hard = false): void {

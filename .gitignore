@@ -1,3 +1,16 @@
 node_modules/
 dist/
 release/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local logs, env files and TypeScript caches
+*.log
+npm-debug.log*
+.env
+.env.*
+*.local
+*.tsbuildinfo

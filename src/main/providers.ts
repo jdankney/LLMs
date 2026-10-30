@@ -93,6 +93,11 @@ export function isExtra(id: string): boolean {
 /** Tab icon URL as seen from dist/renderer/index.html. */
 export function iconFor(p: Provider): string {
   if (p.icon) return p.icon;
-  const builtin = p.base ?? (PROVIDERS.some((b) => b.id === p.id) ? p.id : undefined);
-  return builtin ? `../../resources/icons/${builtin}.png` : '';
+
+  // Extra accounts inherit their base provider's icon (including custom sites).
+  const base = p.base ? findProvider(p.base) : undefined;
+  if (base?.icon) return base.icon;
+
+  const id = base?.id ?? p.id;
+  return PROVIDERS.some((b) => b.id === id) ? `../../resources/icons/${id}.png` : '';
 }
