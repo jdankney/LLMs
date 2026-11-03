@@ -2,4 +2,6 @@
 # Launches LLMs from this checkout. Rebuild with `npm run build` after changing the code.
 ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 unset ELECTRON_RUN_AS_NODE
-exec "$ROOT/node_modules/electron/dist/electron" "$ROOT" --ozone-platform-hint=auto "$@"
+# Electron 44+ downloads its binary lazily on first use. Invoke the package CLI
+# rather than the internal dist path so a fresh `npm install` can still launch.
+exec "$ROOT/node_modules/.bin/electron" "$ROOT" --ozone-platform-hint=auto "$@"

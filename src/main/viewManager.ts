@@ -383,7 +383,9 @@ export class ViewManager {
     if (req.kind === 'account') {
       const found = findProvider(req.base);
       if (!found) return null;
-      const root = findProvider(found.base ?? found.id)!;
+      // A removed custom site can leave its extra accounts behind; fall back to
+      // the account itself instead of dereferencing a missing base.
+      const root = findProvider(found.base ?? found.id) ?? found;
       const id = this.freeId(root.id);
       entry = {
         id,
@@ -440,15 +442,17 @@ export class ViewManager {
 
     const s = getSettings();
     this.unload(id);
+    // unload() may have switched the active tab, so read settings again.
+    const latest = getSettings();
     await session.fromPartition(entry.partition).clearStorageData();
-    const zoom = { ...s.zoom };
+    const zoom = { ...latest.zoom };
     delete zoom[id];
     updateSettings({
-      custom: s.custom.filter((c) => c.id !== id),
-      order: s.order.filter((x) => x !== id),
-      disabled: s.disabled.filter((x) => x !== id),
+      custom: latest.custom.filter((c) => c.id !== id),
+      order: latest.order.filter((x) => x !== id),
+      disabled: latest.disabled.filter((x) => x !== id),
       zoom,
-      lastActive: s.lastActive === id ? null : s.lastActive,
+      lastActive: latest.lastActive === id ? null : latest.lastActive,
     });
     this.applySettings(s);
     this.toast({ text: `Removed ${entry.name}` });
